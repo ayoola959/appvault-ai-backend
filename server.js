@@ -1,11 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Read the API key from Render's environment variable
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.post('/api/chat', async (req, res) => {
@@ -13,7 +11,6 @@ app.post('/api/chat', async (req, res) => {
     if (!userMessage) {
         return res.status(400).json({ error: 'Message is required' });
     }
-
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -23,25 +20,14 @@ app.post('/api/chat', async (req, res) => {
             },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant for App Vault, a safe app download platform.' },
-                    { role: 'user', content: userMessage }
-                ],
-                temperature: 0.7,
-                max_tokens: 500
+                messages: [{ role: 'user', content: userMessage }]
             })
         });
-
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error?.message || 'OpenAI API error');
-        }
-
-        const reply = data.choices[0].message.content;
-        res.json({ reply });
-    } catch (error) {
-        console.error('Backend error:', error);
-        res.status(500).json({ error: error.message });
+        if (!response.ok) throw new Error(data.error?.message);
+        res.json({ reply: data.choices[0].message.content });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
